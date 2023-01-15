@@ -1,6 +1,6 @@
 class EXEPROJECTINFO():
     def __init__(self, ea):
-        self.__lpHeader = ea
+        self.__lpBase = ea
 
         self.szVbMagic = ida_bytes.get_dword(ea)
         self.wRuntimeBuild = ida_bytes.get_word(ea + 4)
@@ -27,16 +27,64 @@ class EXEPROJECTINFO():
         self.bSZProjectName = ida_bytes.get_dword(ea + 100)
 
     def getProjectDescription(self):
-        return ida_bytes.get_strlit_contents(self.__lpHeader + self.bSZProjectDescription, -1, STRTYPE_C)
+        return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectDescription, -1, STRTYPE_C)
 
     def getProjectExeName(self):
-        return ida_bytes.get_strlit_contents(self.__lpHeader + self.bSZProjectExeName, -1, STRTYPE_C)
+        return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectExeName, -1, STRTYPE_C)
 
     def getProjectHelpFile(self):
-        return ida_bytes.get_strlit_contents(self.__lpHeader + self.bSZProjectHelpFile, -1, STRTYPE_C)
+        return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectHelpFile, -1, STRTYPE_C)
 
     def getProjectName(self):
-        return ida_bytes.get_strlit_contents(self.__lpHeader + self.bSZProjectName, -1, STRTYPE_C)
+        return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectName, -1, STRTYPE_C)
+
+class ProjectData():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.dwVersion = ida_bytes.get_dword(ea)                 # 0x0 dwVersion 5.00 in Hex (0x1F4). Version.
+        self.lpObjectTable = ida_bytes.get_dword(ea + 0x4)             # 0x4 lpObjectTable Pointer to the Object Table
+        self.dwNull = ida_bytes.get_dword(ea + 0x8)                    # 0x8 dwNull Unused value after compilation.
+        self.lpCodeStart = ida_bytes.get_dword(ea + 0xC)               # 0xC lpCodeStart Points to start of code. Unused.
+        self.lpCodeEnd = ida_bytes.get_dword(ea + 0x10)                 # 0x10 lpCodeEnd Points to end of code. Unused.
+        self.dwDataSize = ida_bytes.get_dword(ea + 0x14)                # 0x14 dwDataSize Size of VB Object Structures. Unused.
+        self.lpThreadSpace = ida_bytes.get_dword(ea + 0x18)             # 0x18 lpThreadSpace Pointer to Pointer to Thread Object.
+        self.lpVbaSeh = ida_bytes.get_dword(ea + 0x1C)                  # 0x1C lpVbaSeh Pointer to VBA Exception Handler
+        self.lpNativeCode = ida_bytes.get_dword(ea + 0x20)              # 0x20 lpNativeCode Pointer to .DATA section.
+        self.szPathInformation = ida_bytes.get_strlit_contents(ea + 0x24, 0x210, STRTYPE_C)  # 0x24 szPathInformation Contains Path and ID string. < SP6
+        self.lpExternalTable = ida_bytes.get_dword(ea + 0x234)           # 0x234 lpExternalTable Pointer to External Table.
+        self.dwExternalCount = ida_bytes.get_dword(ea + 0x238)           # 0x238 dwExternalCount Objects in the External Table.
+
+class ObjectTable():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.lpHeapLink = ida_bytes.get_dword(ea)          # 0x0 lpHeapLink Unused after compilation, always 0.
+        self.lpExecProj = ida_bytes.get_dword(ea + 0x4)          # 0x4 lpExecProj Pointer to VB Project Exec COM Object.
+        self.lpProjectInfo2 = ida_bytes.get_dword(ea + 0x8)      # 0x8 lpProjectInfo2 Secondary Project Information
+        self.dwReserved = ida_bytes.get_dword(ea + 0xC)          # 0xC dwReserved Always set to -1 after compiling. Unused
+        self.dwNull = ida_bytes.get_dword(ea + 0x10)              # 0x10 dwNull Not used in compiled mode.
+        self.lpProjectObject = ida_bytes.get_dword(ea + 0x14)     # 0x14 lpProjectObject Pointer to in-memory Project Data.
+        self.uuidObject = ida_bytes.get_bytes(ea + 0x18, 0x10)  # 0x18 uuidObject GUID of the Object Table.
+        self.fCompileState = ida_bytes.get_word(ea + 0x28)       # 0x28 fCompileState Internal flag used during compilation.
+        self.wTotalObjects = ida_bytes.get_word(ea + 0x2A)       # 0x2A wTotalObjects Total objects present in Project.
+        self.wCompiledObjects = ida_bytes.get_word(ea + 0x2C)    # 0x2C wCompiledObjects Equal to above after compiling.
+        self.wObjectsInUse = ida_bytes.get_word(ea + 0x2E)       # 0x2E wObjectsInUse Usually equal to above after compile.
+        self.lpObjectArray = ida_bytes.get_dword(ea + 0x30)       # 0x30 lpObjectArray Pointer to Object Descriptors
+        self.fIdeFlag = ida_bytes.get_dword(ea + 0x34)            # 0x34 fIdeFlag Flag/Pointer used in IDE only.
+        self.lpIdeData = ida_bytes.get_dword(ea + 0x38)           # 0x38 lpIdeData Flag/Pointer used in IDE only.
+        self.lpIdeData2 = ida_bytes.get_dword(ea + 0x3C)          # 0x3C lpIdeData2 Flag/Pointer used in IDE only.
+        self.lpszProjectName = ida_bytes.get_dword(ea + 0x40)     # 0x40 lpszProjectName Pointer to Project Name.
+        self.dwLcid = ida_bytes.get_dword(ea + 0x44)              # 0x44 dwLcid LCID of Project.
+        self.dwLcid2 = ida_bytes.get_dword(ea + 0x48)             # 0x48 dwLcid2 Alternate LCID of Project.
+        self.lpIdeData3 = ida_bytes.get_dword(ea + 0x4C)          # 0x4C lpIdeData3 Flag/Pointer used in IDE only.
+        self.dwIdentifier = ida_bytes.get_dword(ea + 0x50)        # 0x50 dwIdentifier Template Version of Structure.
+
 
 vbHdr = EXEPROJECTINFO(get_screen_ea())
 print(vbHdr.getProjectName())
+projData = ProjectData(vbHdr.lpProjectData)
+print(hex(projData.lpCodeStart))
+print(hex(projData.lpObjectTable))
+objTable = ObjectTable(projData.lpObjectTable)
+print(ida_bytes.get_strlit_contents(objTable.lpszProjectName, -1, STRTYPE_C))
