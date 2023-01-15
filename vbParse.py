@@ -80,6 +80,43 @@ class ObjectTable():
         self.lpIdeData3 = ida_bytes.get_dword(ea + 0x4C)          # 0x4C lpIdeData3 Flag/Pointer used in IDE only.
         self.dwIdentifier = ida_bytes.get_dword(ea + 0x50)        # 0x50 dwIdentifier Template Version of Structure.
 
+class ProjectData2():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.lpHeapLink = ida_bytes.get_dword(ea)            # 0x0 lpHeapLink Unused after compilation, always 0.
+        self.lpObjectTable = ida_bytes.get_dword(ea + 0x4)         # 0x4 lpObjectTable Back-Pointer to the Object Table.
+        self.dwReserved = ida_bytes.get_dword(ea + 0x8)            # 0x8 dwReserved Always set to -1 after compiling. Unused
+        self.dwUnused = ida_bytes.get_dword(ea + 0xC)              # 0xC dwUnused Not written or read in any case.
+        # points to array of pointers to `PrivateObjectDescriptor`
+        self.lpObjectList = ida_bytes.get_dword(ea + 0x10)          # 0x10 lpObjectList Pointer to Object Descriptor Pointers.
+        self.dwUnused2 = ida_bytes.get_dword(ea + 0x14)             # 0x14 dwUnused2 Not written or read in any case.
+        self.szProjectDescription = ida_bytes.get_dword(ea + 0x18)  # 0x18 szProjectDescription Pointer to Project Description
+        self.szProjectHelpFile = ida_bytes.get_dword(ea + 0x1C)     # 0x1C szProjectHelpFile Pointer to Project Help File
+        self.dwReserved2 = ida_bytes.get_dword(ea + 0x20)           # 0x20 dwReserved2 Always set to -1 after compiling. Unused
+        self.dwHelpContextId = ida_bytes.get_dword(ea + 0x24)       # 0x24 dwHelpContextId Help Context ID set in Project Settings.
+
+class PublicObjectDescriptor():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.lpObjectInfo = ida_bytes.get_dword(ea)    # 0x0 lpObjectInfo Pointer to the Object Info for this Object.
+        self.dwReserved = ida_bytes.get_dword(ea + 0x4)      # 0x4 dwReserved Always set to -1 after compiling.
+        self.lpPublicBytes = ida_bytes.get_dword(ea + 0x8)   # 0x8 lpPublicBytes Pointer to Public Variable Size integers.
+        self.lpStaticBytes = ida_bytes.get_dword(ea + 0xC)   # 0xC lpStaticBytes Pointer to Static Variable Size integers.
+        self.lpModulePublic = ida_bytes.get_dword(ea + 0x10)  # 0x10 lpModulePublic Pointer to Public Variables in DATA section
+        self.lpModuleStatic = ida_bytes.get_dword(ea + 0x14)  # 0x14 lpModuleStatic Pointer to Static Variables in DATA section
+        self.lpszObjectName = ida_bytes.get_dword(ea + 0x18)  # 0x18 lpszObjectName Name of the Object.
+        self.dwMethodCount = ida_bytes.get_dword(ea + 0x1C)   # 0x1C dwMethodCount Number of Methods in Object.
+        self.lpMethodNames = ida_bytes.get_dword(ea + 0x20)   # 0x20 lpMethodNames If present, pointer to Method names array.
+        self.bStaticVars = ida_bytes.get_dword(ea + 0x24)     # 0x24 bStaticVars Offset to where to copy Static Variables.
+        self.fObjectType = ida_bytes.get_dword(ea + 0x28)     # 0x28 fObjectType Flags defining the Object Type.
+        self.dwNull = ida_bytes.get_dword(ea + 0x2C)          # 0x2C dwNull Not valid after compilation.
+
+    @staticmethod
+    def size():
+        return 0x30
+
 
 vbHdr = EXEPROJECTINFO(get_screen_ea())
 print(vbHdr.getProjectName())
@@ -87,4 +124,13 @@ projData = ProjectData(vbHdr.lpProjectData)
 print(hex(projData.lpCodeStart))
 print(hex(projData.lpObjectTable))
 objTable = ObjectTable(projData.lpObjectTable)
-print(ida_bytes.get_strlit_contents(objTable.lpszProjectName, -1, STRTYPE_C))
+print(objTable.wCompiledObjects)
+projData2 = ProjectData2(objTable.lpProjectInfo2)
+print(hex(projData2.lpObjectTable))
+
+print('#######################')
+for i in range(objTable.wCompiledObjects):
+    va = objTable.lpObjectArray + (i * PublicObjectDescriptor.size())
+    pubObjDesc = PublicObjectDescriptor(va)
+    print(hex(pubObjDesc.lpszObjectName))
+
