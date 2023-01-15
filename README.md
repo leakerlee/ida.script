@@ -1,0 +1,2 @@
+# ida.script
+ida scripts
