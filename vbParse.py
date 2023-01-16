@@ -219,7 +219,10 @@ class OptionalObjectInfo():
 OBJECT_HAS_OPTIONAL_INFO = 0x1
 
 vbHdr = EXEPROJECTINFO(get_screen_ea())
+EXEPROJECTINFO.createDataStructure()
 print(vbHdr.getProjectName())
+del_items(get_screen_ea(), DELIT_SIMPLE, EXEPROJECTINFO.size())
+idc.create_struct(get_screen_ea(), -1, "VB_EXEPROJECTINFO")
 projData = ProjectData(vbHdr.lpProjectData)
 print(hex(projData.lpCodeStart))
 print(hex(projData.lpObjectTable))
