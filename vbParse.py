@@ -1,4 +1,6 @@
 class EXEPROJECTINFO():
+    __structName = "VB_EXEPROJECTINFO"
+
     def __init__(self, ea):
         self.__lpBase = ea
 
@@ -37,6 +39,54 @@ class EXEPROJECTINFO():
 
     def getProjectName(self):
         return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectName, -1, STRTYPE_C)
+
+    def setProjectNameType(self):
+        del_items(self.__lpBase + self.bSZProjectName, DELIT_SIMPLE, ida_bytes.get_max_strlit_length(self.__lpBase + self.bSZProjectName, STRTYPE_C))
+        return ida_bytes.create_strlit(self.__lpBase + self.bSZProjectName, 0, STRTYPE_C)
+
+    @staticmethod
+    def size():
+        return 0x68
+
+    @staticmethod
+    def createDataStructure():
+        uiStructID = ida_struct.get_struc_id(EXEPROJECTINFO.__structName)
+        if uiStructID != BADADDR:
+            print(EXEPROJECTINFO.__structName + " exists")
+            ida_struct.del_struc(ida_struct.get_struc(uiStructID))
+        tidStruc = ida_struct.add_struc(BADADDR, EXEPROJECTINFO.__structName)
+        if tidStruc == BADADDR:
+            print("ida_struct.add_struc " + EXEPROJECTINFO.__structName + " failed")
+            return False
+        idc.add_struc_member(tidStruc, "szVbMagic", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "wRuntimeBuild", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "szLangDll", BADADDR, FF_STRLIT|FF_DATA, -1, 0xE)
+        idc.add_struc_member(tidStruc, "szSecLangDll", BADADDR, FF_STRLIT|FF_DATA, -1, 0xE)
+        idc.add_struc_member(tidStruc, "wRuntimeRevision", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "dwLCID", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "dwSecLCID", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpSubMain", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpProjectData", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "fMdlIntCtls", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "fMdlIntCtls2", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "dwThreadFlags", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "dwThreadCount", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "wFormCount", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "wExternalCount", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "dwThunkCount", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpGuiTable", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpExternalTable", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpComRegisterData", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "bSZProjectDescription", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "bSZProjectExeName", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "bSZProjectHelpFile", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "bSZProjectName", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+
+'''
+    def makeDataType(self):
+        ida_bytes.create_dword(self.__lpBase, 4)
+        ida_bytes.create_dword(self.__lpBase, 4)
+'''
 
 class ProjectData():
     def __init__(self, ea):
@@ -117,6 +167,56 @@ class PublicObjectDescriptor():
     def size():
         return 0x30
 
+class ObjectInfo():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.wRefCount = ida_bytes.get_word(ea)        # 0x0 wRefCount Always 1 after compilation.
+        self.wObjectIndex = ida_bytes.get_word(ea + 0x2)     # 0x2 wObjectIndex Index of this Object.
+        self.lpObjectTable = ida_bytes.get_dword(ea + 0x4)    # 0x4 lpObjectTable Pointer to the Object Table
+        self.lpIdeData = ida_bytes.get_dword(ea + 0x8)        # 0x8 lpIdeData Zero after compilation. Used in IDE only.
+        self.lpPrivateObject = ida_bytes.get_dword(ea + 0xC)  # 0xC lpPrivateObject Pointer to Private Object Descriptor.
+        self.dwReserved = ida_bytes.get_dword(ea + 0x10)       # 0x10 dwReserved Always -1 after compilation.
+        self.dwNull = ida_bytes.get_dword(ea + 0x14)           # 0x14 dwNull Unused.
+        self.lpObject = ida_bytes.get_dword(ea + 0x18)         # 0x18 lpObject Back-Pointer to Public Object Descriptor.
+        self.lpProjectData = ida_bytes.get_dword(ea + 0x1C)    # 0x1C lpProjectData Pointer to in-memory Project Object.
+        self.wMethodCount = ida_bytes.get_word(ea + 0x20)     # 0x20 wMethodCount Number of Methods
+        self.wMethodCount2 = ida_bytes.get_word(ea + 0x22)    # 0x22 wMethodCount2 Zeroed out after compilation. IDE only.
+        self.lpMethods = ida_bytes.get_dword(ea + 0x24)        # 0x24 lpMethods Pointer to Array of Methods.
+        self.wConstants = ida_bytes.get_word(ea + 0x28)       # 0x28 wConstants Number of Constants in Constant Pool.
+        self.wMaxConstants = ida_bytes.get_word(ea + 0x2A)    # 0x2A wMaxConstants Constants to allocate in Constant Pool.
+        self.lpIdeData2 = ida_bytes.get_dword(ea + 0x2C)       # 0x2C lpIdeData2 Valid in IDE only.
+        self.lpIdeData3 = ida_bytes.get_dword(ea + 0x30)       # 0x30 lpIdeData3 Valid in IDE only.
+        self.lpConstants = ida_bytes.get_dword(ea + 0x34)      # 0x34 lpConstants Pointer to Constants Pool.
+
+    @staticmethod
+    def size():
+        return 0x38
+
+class OptionalObjectInfo():
+    def __init__(self, ea):
+        self.__lpBase = ea
+
+        self.dwObjectGuiGuids = ida_bytes.get_dword(ea)         # 0x0 Number of ObjectGUI GUIDs (2 for Designer)
+        self.lpObjectCLSID = ida_bytes.get_dword(ea + 0x4)            # 0x4 Pointer to object CLSID
+        self.dwNull = ida_bytes.get_dword(ea + 0x8)                   # 0x8
+        self.lpGuidObjectGUITable = ida_bytes.get_dword(ea + 0xC)     # 0xC Pointer to pointers of guidObjectGUI
+        self.dwObjectDefaultIIDCount = ida_bytes.get_dword(ea + 0x10)  # 0x10 Number of DefaultIIDs
+        self.lpObjectEventsIIDTable = ida_bytes.get_dword(ea + 0x14)   # 0x14 Pointer to pointers of EventsIID
+        self.dwObjectEventsIIDCount = ida_bytes.get_dword(ea + 0x18)   # 0x18 Number of EventsIID
+        self.lpObjectDefaultIIDTable = ida_bytes.get_dword(ea + 0x1C)  # 0x1C Pointer to pointers of DefaultIID
+        self.dwControlCount = ida_bytes.get_dword(ea + 0x20)           # 0x20 dwControlCount Number of Controls in array below.
+        self.lpControls = ida_bytes.get_dword(ea + 0x24)               # 0x24 lpControls Pointer to Controls Array.
+        self.wMethodLinkCount = ida_bytes.get_word(ea + 0x28)         # 0x28 wMethodLinkCount Number of Method Links
+        self.wPCodeCount = ida_bytes.get_word(ea + 0x2A)              # 0x2A wPCodeCount Number of P-Codes used by this Object.
+        self.bWInitializeEvent = ida_bytes.get_word(ea + 0x2C)        # 0x2C bWInitializeEvent Offset to Initialize Event from Event Table.
+        self.bWTerminateEvent = ida_bytes.get_word(ea + 0x2E)         # 0x2E bWTerminateEvent Offset to Terminate Event in Event Table.
+        self.lpMethodLinkTable = ida_bytes.get_dword(ea + 0x30)        # 0x30 lpMethodLinkTable Pointer to pointers of MethodLink
+        self.lpBasicClassObject = ida_bytes.get_dword(ea + 0x34)       # 0x34 lpBasicClassObject Pointer to in-memory Class Objects.
+        self.dwNull3 = ida_bytes.get_dword(ea + 0x38)                  # 0x38 dwNull3 Unused.
+        self.lpIdeData = ida_bytes.get_dword(ea + 0x3C)                # 0x3C lpIdeData Only valid in IDE.
+
+OBJECT_HAS_OPTIONAL_INFO = 0x1
 
 vbHdr = EXEPROJECTINFO(get_screen_ea())
 print(vbHdr.getProjectName())
@@ -124,13 +224,25 @@ projData = ProjectData(vbHdr.lpProjectData)
 print(hex(projData.lpCodeStart))
 print(hex(projData.lpObjectTable))
 objTable = ObjectTable(projData.lpObjectTable)
+print(objTable.wTotalObjects)
 print(objTable.wCompiledObjects)
+print(objTable.wObjectsInUse)
 projData2 = ProjectData2(objTable.lpProjectInfo2)
 print(hex(projData2.lpObjectTable))
 
 print('#######################')
-for i in range(objTable.wCompiledObjects):
+for i in range(objTable.wTotalObjects):
+    print('************')
     va = objTable.lpObjectArray + (i * PublicObjectDescriptor.size())
+    print(hex(va))
     pubObjDesc = PublicObjectDescriptor(va)
-    print(hex(pubObjDesc.lpszObjectName))
+    print(ida_bytes.get_strlit_contents(pubObjDesc.lpszObjectName, -1, STRTYPE_C))
+    objInfo = ObjectInfo(pubObjDesc.lpObjectInfo)
+    if (pubObjDesc.fObjectType & OBJECT_HAS_OPTIONAL_INFO) != 0x0:
+        va = pubObjDesc.lpObjectInfo + ObjectInfo.size()
+        optObjInfo = OptionalObjectInfo(va)
+        print(hex(optObjInfo.lpMethodLinkTable))
+    else:
+        print("OBJECT HAS NO OPTIONAL INFO")
+        break
 
