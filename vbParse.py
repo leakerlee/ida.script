@@ -4,29 +4,29 @@ class EXEPROJECTINFO():
     def __init__(self, ea):
         self.__lpBase = ea
 
-        self.szVbMagic = ida_bytes.get_dword(ea)
-        self.wRuntimeBuild = ida_bytes.get_word(ea + 4)
-        self.szLangDll = ida_bytes.get_strlit_contents(ea + 6, -1, STRTYPE_C)
-        self.szSecLangDll = ida_bytes.get_strlit_contents(ea + 20, -1, STRTYPE_C)
-        self.wRuntimeRevision = ida_bytes.get_word(ea + 34)
-        self.dwLCID = ida_bytes.get_dword(ea + 36)
-        self.dwSecLCID = ida_bytes.get_dword(ea + 40)
-        self.lpSubMain = ida_bytes.get_dword(ea + 44)
-        self.lpProjectData = ida_bytes.get_dword(ea + 48)
-        self.fMdlIntCtls = ida_bytes.get_dword(ea + 52)
-        self.fMdlIntCtls2 = ida_bytes.get_dword(ea + 56)
-        self.dwThreadFlags = ida_bytes.get_dword(ea + 60)
-        self.dwThreadCount = ida_bytes.get_dword(ea + 64)
-        self.wFormCount = ida_bytes.get_word(ea + 68)
-        self.wExternalCount = ida_bytes.get_word(ea + 70)
-        self.dwThunkCount = ida_bytes.get_dword(ea + 72)
-        self.lpGuiTable = ida_bytes.get_dword(ea + 76)
-        self.lpExternalTable = ida_bytes.get_dword(ea + 80)
-        self.lpComRegisterData = ida_bytes.get_dword(ea + 84)
-        self.bSZProjectDescription = ida_bytes.get_dword(ea + 88)
-        self.bSZProjectExeName = ida_bytes.get_dword(ea + 92)
-        self.bSZProjectHelpFile = ida_bytes.get_dword(ea + 96)
-        self.bSZProjectName = ida_bytes.get_dword(ea + 100)
+        self.szVbMagic = ida_bytes.get_strlit_contents(ea, 4, STRTYPE_C)                # 0x0 szVbMagic “VB5!” String
+        self.wRuntimeBuild = ida_bytes.get_word(ea + 4)                                 # 0x4 wRuntimeBuild Build of the VB6 Runtime
+        self.szLangDll = ida_bytes.get_strlit_contents(ea + 6, -1, STRTYPE_C)           # 0x6 szLangDll Language Extension DLL
+        self.szSecLangDll = ida_bytes.get_strlit_contents(ea + 20, -1, STRTYPE_C)       # 0x14 szSecLangDll 2nd Language Extension DLL
+        self.wRuntimeRevision = ida_bytes.get_word(ea + 34)                             # 0x22 wRuntimeRevision Internal Runtime Revision
+        self.dwLCID = ida_bytes.get_dword(ea + 36)                                      # 0x24 dwLCID LCID of Language DLL
+        self.dwSecLCID = ida_bytes.get_dword(ea + 40)                                   # 0x28 dwSecLCID LCID of 2nd Language DLL
+        self.lpSubMain = ida_bytes.get_dword(ea + 44)                                   # 0x2C lpSubMain Pointer to Sub Main Code
+        self.lpProjectData = ida_bytes.get_dword(ea + 48)                               # 0x30 lpProjectData Pointer to Project Data
+        self.fMdlIntCtls = ida_bytes.get_dword(ea + 52)                                 # 0x34 fMdlIntCtls VB Control Flags for IDs < 32
+        self.fMdlIntCtls2 = ida_bytes.get_dword(ea + 56)                                # 0x38 fMdlIntCtls2 VB Control Flags for IDs > 32
+        self.dwThreadFlags = ida_bytes.get_dword(ea + 60)                               # 0x3C dwThreadFlags Threading Mode
+        self.dwThreadCount = ida_bytes.get_dword(ea + 64)                               # 0x40 dwThreadCount Threads to support in pool
+        self.wFormCount = ida_bytes.get_word(ea + 68)                                   # 0x44 wFormCount Number of forms present
+        self.wExternalCount = ida_bytes.get_word(ea + 70)                               # 0x46 wExternalCount Number of external controls
+        self.dwThunkCount = ida_bytes.get_dword(ea + 72)                                # 0x48 dwThunkCount Number of thunks to create
+        self.lpGuiTable = ida_bytes.get_dword(ea + 76)                                  # 0x4C lpGuiTable Pointer to GUI Table
+        self.lpExternalTable = ida_bytes.get_dword(ea + 80)                             # 0x50 lpExternalTable Pointer to External Table
+        self.lpComRegisterData = ida_bytes.get_dword(ea + 84)                           # 0x54 lpComRegisterData Pointer to COM Information
+        self.bSZProjectDescription = ida_bytes.get_dword(ea + 88)                       # 0x58 bSZProjectDescription Offset to Project Description
+        self.bSZProjectExeName = ida_bytes.get_dword(ea + 92)                           # 0x5C bSZProjectExeName Offset to Project EXE Name
+        self.bSZProjectHelpFile = ida_bytes.get_dword(ea + 96)                          # 0x60 bSZProjectHelpFile Offset to Project Help File
+        self.bSZProjectName = ida_bytes.get_dword(ea + 100)                             # 0x64 bSZProjectName Offset to Project Name
 
     def getProjectDescription(self):
         return ida_bytes.get_strlit_contents(self.__lpBase + self.bSZProjectDescription, -1, STRTYPE_C)
@@ -58,7 +58,8 @@ class EXEPROJECTINFO():
         if tidStruc == BADADDR:
             print("ida_struct.add_struc " + EXEPROJECTINFO.__structName + " failed")
             return False
-        idc.add_struc_member(tidStruc, "szVbMagic", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+
+        idc.add_struc_member(tidStruc, "szVbMagic", BADADDR, FF_STRLIT|FF_DATA, -1, 4)
         idc.add_struc_member(tidStruc, "wRuntimeBuild", BADADDR, FF_WORD|FF_DATA, -1, 2)
         idc.add_struc_member(tidStruc, "szLangDll", BADADDR, FF_STRLIT|FF_DATA, -1, 0xE)
         idc.add_struc_member(tidStruc, "szSecLangDll", BADADDR, FF_STRLIT|FF_DATA, -1, 0xE)
@@ -82,13 +83,34 @@ class EXEPROJECTINFO():
         idc.add_struc_member(tidStruc, "bSZProjectHelpFile", BADADDR, FF_DWORD|FF_DATA, -1, 4)
         idc.add_struc_member(tidStruc, "bSZProjectName", BADADDR, FF_DWORD|FF_DATA, -1, 4)
 
-'''
-    def makeDataType(self):
-        ida_bytes.create_dword(self.__lpBase, 4)
-        ida_bytes.create_dword(self.__lpBase, 4)
-'''
+        til, ti = idaapi.get_idati(), idaapi.tinfo_t()
+        ida_typeinf.import_type(til, -1, "CLSID", )
+
+        strRes = ida_typeinf.parse_decl(ti, til, "typedef CLSID* LPCLSID;", 0)
+        print(strRes)
+
+        if strRes is not None:
+            ida_struct.set_member_tinfo(\
+                ida_struct.get_struc(ida_struct.get_struc_id("VB_EXEPROJECTINFO")), ida_struct.get_member(ida_struct.get_struc(ida_struct.get_struc_id("VB_EXEPROJECTINFO")), get_member_offset(ida_struct.get_struc_id("VB_EXEPROJECTINFO"), "lpGuiTable")),\
+                get_member_offset(ida_struct.get_struc_id("VB_EXEPROJECTINFO"), "lpGuiTable"),\
+                ti,\
+                0\
+            )
+        else:
+            print("parse_decl failed")
+
+    @staticmethod
+    def applyDataStructure(ea):
+        EXEPROJECTINFO.createDataStructure()
+        del_items(ea, DELIT_SIMPLE, EXEPROJECTINFO.size())
+        idc.create_struct(ea, -1, EXEPROJECTINFO.__structName)
+        lpGuiTable = ida_bytes.get_dword(ea + 0x4C)
+        del_items(lpGuiTable, DELIT_SIMPLE, ida_struct.get_struc_size(ida_struct.get_struc_id("GUID")))
+        idc.create_struct(lpGuiTable, -1, "GUID")
 
 class ProjectData():
+    __structName = "VB_ProjectData"
+
     def __init__(self, ea):
         self.__lpBase = ea
 
@@ -105,7 +127,43 @@ class ProjectData():
         self.lpExternalTable = ida_bytes.get_dword(ea + 0x234)           # 0x234 lpExternalTable Pointer to External Table.
         self.dwExternalCount = ida_bytes.get_dword(ea + 0x238)           # 0x238 dwExternalCount Objects in the External Table.
 
+    @staticmethod
+    def size():
+        return 0x23C
+
+    @staticmethod
+    def createDataStructure():
+        uiStructID = ida_struct.get_struc_id(ProjectData.__structName)
+        if uiStructID != BADADDR:
+            print(ProjectData.__structName + " exists")
+            ida_struct.del_struc(ida_struct.get_struc(uiStructID))
+        tidStruc = ida_struct.add_struc(BADADDR, ProjectData.__structName)
+        if tidStruc == BADADDR:
+            print("ida_struct.add_struc " + ProjectData.__structName + " failed")
+            return False
+
+        idc.add_struc_member(tidStruc, "dwVersion", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpObjectTable", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwNull", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpCodeStart", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpCodeEnd", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwDataSize", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpThreadSpace", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpVbaSeh", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpNativeCode", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "szPathInformation", BADADDR, FF_STRLIT|FF_DATA, -1, 0x210)
+        idc.add_struc_member(tidStruc, "lpExternalTable", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwExternalCount", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+
+    @staticmethod
+    def applyDataStructure(ea):
+        ProjectData.createDataStructure()
+        del_items(ea, DELIT_SIMPLE, ProjectData.size())
+        idc.create_struct(ea, -1, ProjectData.__structName)
+
 class ObjectTable():
+    __structName = "VB_ObjectTable"
+
     def __init__(self, ea):
         self.__lpBase = ea
 
@@ -129,6 +187,51 @@ class ObjectTable():
         self.dwLcid2 = ida_bytes.get_dword(ea + 0x48)             # 0x48 dwLcid2 Alternate LCID of Project.
         self.lpIdeData3 = ida_bytes.get_dword(ea + 0x4C)          # 0x4C lpIdeData3 Flag/Pointer used in IDE only.
         self.dwIdentifier = ida_bytes.get_dword(ea + 0x50)        # 0x50 dwIdentifier Template Version of Structure.
+
+    @staticmethod
+    def size():
+        return 0x54
+
+    @staticmethod
+    def createDataStructure():
+        uiStructID = ida_struct.get_struc_id(ObjectTable.__structName)
+        if uiStructID != BADADDR:
+            print(ObjectTable.__structName + " exists")
+            ida_struct.del_struc(ida_struct.get_struc(uiStructID))
+        tidStruc = ida_struct.add_struc(BADADDR, ObjectTable.__structName)
+        if tidStruc == BADADDR:
+            print("ida_struct.add_struc " + ObjectTable.__structName + " failed")
+            return False
+
+        til = idaapi.get_idati()
+        ida_typeinf.import_type(til, -1, "GUID", )
+
+        idc.add_struc_member(tidStruc, "lpHeapLink", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpExecProj", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpProjectInfo2", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwReserved", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "dwNull", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpProjectObject", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(ida_struct.get_struc_id(ObjectTable.__structName), "uuidObject", BADADDR, FF_STRUCT|FF_DATA, ida_struct.get_struc_id("GUID"), 0x10)
+        idc.add_struc_member(tidStruc, "fCompileState", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "wTotalObjects", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "wCompiledObjects", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "wObjectsInUse", BADADDR, FF_WORD|FF_DATA, -1, 2)
+        idc.add_struc_member(tidStruc, "lpObjectArray", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "fIdeFlag", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpIdeData", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpIdeData2", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "lpszProjectName", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwLcid", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "dwLcid2", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+        idc.add_struc_member(tidStruc, "lpIdeData3", BADADDR, FF_0OFF|FF_1OFF|FF_DWORD|FF_DATA, 0, 4)
+        idc.add_struc_member(tidStruc, "dwIdentifier", BADADDR, FF_DWORD|FF_DATA, -1, 4)
+
+    @staticmethod
+    def applyDataStructure(ea):
+        ObjectTable.createDataStructure()
+        del_items(ea, DELIT_SIMPLE, ObjectTable.size())
+        idc.create_struct(ea, -1, ObjectTable.__structName)
 
 class ProjectData2():
     def __init__(self, ea):
@@ -219,17 +322,16 @@ class OptionalObjectInfo():
 OBJECT_HAS_OPTIONAL_INFO = 0x1
 
 vbHdr = EXEPROJECTINFO(get_screen_ea())
-EXEPROJECTINFO.createDataStructure()
+EXEPROJECTINFO.applyDataStructure(get_screen_ea())
 print(vbHdr.getProjectName())
-del_items(get_screen_ea(), DELIT_SIMPLE, EXEPROJECTINFO.size())
-idc.create_struct(get_screen_ea(), -1, "VB_EXEPROJECTINFO")
 projData = ProjectData(vbHdr.lpProjectData)
-print(hex(projData.lpCodeStart))
+ProjectData.applyDataStructure(vbHdr.lpProjectData)
+
 print(hex(projData.lpObjectTable))
 objTable = ObjectTable(projData.lpObjectTable)
+ObjectTable.applyDataStructure(projData.lpObjectTable)
 print(objTable.wTotalObjects)
-print(objTable.wCompiledObjects)
-print(objTable.wObjectsInUse)
+
 projData2 = ProjectData2(objTable.lpProjectInfo2)
 print(hex(projData2.lpObjectTable))
 
@@ -248,4 +350,5 @@ for i in range(objTable.wTotalObjects):
     else:
         print("OBJECT HAS NO OPTIONAL INFO")
         break
+
 
